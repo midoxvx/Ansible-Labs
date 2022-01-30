@@ -1,0 +1,30 @@
+---
+
+- name: sefcontext_vhost_directory
+  sefcontext:
+    setype: httpd_sys_content_t
+    target: "{{virtual_host_directory}}(/.*)?"
+    state: present
+
+- name: setport_special
+  seport:
+    ports: "{{apache_special_port}}"
+    proto: tcp
+    setype: http_port_t
+    state: present
+
+- name: restore_context_vhost_directory
+  shell:
+    cmd: "restorecon -Rv {{virtual_host_directory}}"
+- name: start_web_server
+  service:
+    name: "{{apache_service}}"
+    state: started
+    enabled: true
+- name: apache_firewall
+  firewalld:
+    service: http
+    status: enabled
+    immediate: true
+    permanent: true
+# handlers file for apache

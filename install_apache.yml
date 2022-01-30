@@ -1,0 +1,8 @@
+---
+- name: Install apache using apache role
+  hosts: webservers
+  tasks:
+
+    - name: Include our role
+      include_role:
+        name: apache

@@ -1,0 +1,63 @@
+---
+
+- name: Gather package facts
+  package_facts:
+    manager: auto
+
+- name: install apache
+  yum:
+    name:
+      - "{{apache_package}}"
+    state: latest
+  when: ansible_facts['packages'][apache_package] is not defined
+
+- name: install firewalld
+  yum:
+    name:
+      - firewalld
+  when: ansible_facts['packages']['firewalld'] is not defined
+
+
+- name: Create /virtual_host directory
+  file:
+    state: directory
+    path: "{{virtual_host_directory}}"
+    owner: "{{ansible_user}}"
+    group: "{{ansible_user}}"
+
+- name: deploy vhost.j2 template
+  template:
+    src: vhost.j2
+    dest: /etc/httpd/conf.d/vhost.conf
+    owner: "{{ansible_user}}"
+    group: "{{ansible_user}}"
+    force: true
+  notify:
+    - sefcontext_vhost_directory
+    - setport_special
+    - restore_context_vhost_directory
+
+- name: deploy index.html.j2 on vhosts
+  template:
+    src: index.html.j2
+    dest: "{{virtual_host_directory}}/index.html"
+    owner: "{{ansible_user}}"
+    group: "{{ansible_user}}"
+    force: true
+
+- name: configure httpd.conf override allow
+  replace:
+    replace: '\1AllowOverride All'
+    regexp: '^(\s+)?AllowOverride None'
+    path: "{{apache_conf_file}}"
+
+- name: configure httpd.conf require all granted
+  replace:
+    replace: '\1Require all granted'
+    regexp: '^(\s+)?Require all .*'
+    path: "{{apache_conf_file}}"
+  notify:
+    - start_web_server
+    - apache_firewall
+
+# tasks file for apache

@@ -1,0 +1,66 @@
+---
+- name: check if a repository needs updates
+  hosts: localhost
+  vars_files:
+    - vars/ftp_vars.yml
+    - vars/hash_vars.yml
+  tasks:
+    - name: stat {{facts_dir}}
+      stat:
+        path: "{{facts_dir}}"
+      register: statOut
+
+
+    - name: initial block to create local facts
+      block:
+        - name: create fact.d directory
+          file:
+            state: directory
+            path: "{{facts_dir}}"
+            owner: "{{ansible_user}}"
+            group: "{{ansible_user}}"
+
+        - name: create local facts file
+          file:
+            state: touch
+            path: "{{facts_dir}}/hash.fact"
+            owner: "{{ansible_user}}"
+            group: "{{ansible_user}}"
+      when: (not statOut.stat.exists)
+    
+
+    - name: compress repository
+      archive:
+        path: /var/ftp/rhce/*
+        dest: /var/ftp/rhce/hash_check.gzip
+        exclude_path: /var/ftp/rhce/repodata
+        format: bz2
+
+    - name: create initial hash of repository
+      stat:
+        path: /var/ftp/rhce/hash_check.gzip
+        get_checksum: true
+        checksum_algorithm: 'md5'
+      register: statcheckOut
+
+    - name: set_fact
+      set_fact:
+          repo_checksum: "{{statcheckOut.stat.checksum}}"
+
+    - name: set local_fact template
+      template:
+        src: hash.fact.j2
+        dest: /etc/ansible/facts.d/hash.fact
+        owner: "{{ansible_user}}"
+        group: "{{ansible_user}}"
+
+    - name: update repodata
+      shell:
+        cmd: "createrepo -v /var/ftp/rhce"
+      when: repo_checksum != ansible_facts['ansible_local']['hash']['repository']['checksum']
+    
+
+    - name: hash_cleanup
+      file:
+        state: absent
+        path: /var/ftp/rhce/hash_check.gzip

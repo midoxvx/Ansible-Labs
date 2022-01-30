@@ -1,0 +1,55 @@
+---
+- name: Configure host as a local repository
+  hosts: localhost
+  vars_files:
+    - vars/ftp_vars.yml
+  tasks:
+
+    - name: Install vsftpd
+      yum:
+        name:
+          - vsftpd
+        state: latest
+
+    - name: create new anon root
+      file:
+        state: directory
+        path: "{{anon_root}}"
+        owner: "{{ansible_user}}"
+        group: "{{ansible_user}}"
+
+    - name: configure vsftpd to allow anon
+      replace:
+        regexp: '^(anonymous_enable=).*'
+        replace: '\1YES'
+        path: "{{vsftpd_config}}"
+      
+    - name: configure vsftp to point to new root
+      lineinfile:
+        line: 'anon_root={{anon_root}}'
+        insertafter: 'EOF'
+        state: present
+        path: "{{vsftpd_config}}"
+
+    - name: configure selinux on new root
+      sefcontext:
+        setype: public_content_t
+        target: "{{anon_root}}(/.*)?"
+        state: present
+
+    - name: Restore context 
+      shell:
+        cmd: "restorecon -Rv {{anon_root}}"
+    - name: configure firewall for vsftpd
+      firewalld:
+        service: ftp
+        state: enabled
+        immediate: true
+        permanent: true
+
+
+    - name: start and enable vsftpd
+      service:
+        name: vsftpd
+        state: started
+        enabled: true

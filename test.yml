@@ -1,0 +1,32 @@
+---
+- name: whatever
+  hosts: localhost
+  vars:
+    - apache_package: httpd
+  tasks:
+
+    - name: stat a directory
+      stat:
+        path: /etc
+        get_checksum: true
+        checksum_algorithm: 'md5'
+      register: statOut
+
+
+    - name: debug
+      debug:
+        msg: "{{statOut}}"
+
+
+
+    - name: test lookup
+      debug:
+        msg: "{{lookup('env', 'USER')}}"
+      tags:
+        - lookup
+
+    - name: varnames
+      debug:
+        msg: "{{lookup('varnames', 'apache_package')}}"
+      tags:
+        - lookup

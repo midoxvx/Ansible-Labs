@@ -1,0 +1,9 @@
+---
+
+
+apache_package: httpd
+apache_service: httpd
+apache_special_port: 83
+apache_conf_file: /etc/httpd/conf/httpd.conf
+virtual_host_directory: /virtual_host
+# vars file for apache
