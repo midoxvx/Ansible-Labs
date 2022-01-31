@@ -1,0 +1,58 @@
+---
+- name: create users on remote hosts conditionally
+  hosts: all
+  vars_files:
+    - vars/users_list.yml
+    - vars/secrets.yml
+  tasks:
+  
+    - name: create {{keys_directory}}
+      file:
+        state: directory
+        path: "{{keys_directory}}"
+        owner: "{{ansible_user}}"
+        group: "{{ansible_user}}"
+        mode: '4775'
+      delegate_to: localhost
+      run_once: true
+
+    - name: local create users locally with ssh keys
+      user:
+        name: "{{localuser.username}}"
+        state: present
+        password: "{{user_password | password_hash('sha512', 'rhca')}}"
+        shell: /bin/bash
+        generate_ssh_key: true
+        ssh_key_file: "{{keys_directory}}/{{localuser.username}}_rsa"
+        uid: "{{localuser.uid}}"
+      loop: "{{users}}"
+      loop_control:
+        loop_var: localuser
+      delegate_to: localhost
+      run_once: true
+
+    - name: Change permissions on {{keys_directory}} so lookup plugin works
+      file:
+        state: directory
+        recurse: true
+        owner: "{{ansible_user}}"
+        group: "{{ansible_user}}"
+      delegate_to: localhost
+      run_once: true
+
+    - name: create users on webservers 
+      user:
+        name: "{{webserver_user.username}}"
+        state: present
+        password: "{{user_password | password_hash('sha512', 'rhca')}}"
+        shell: /bin/bash
+        uid: "{{webserver_user.uid}}"
+      loop: "{{users}}"
+      loop_control:
+        loop_var: webserver_user
+      when: ('webservers' in group_names and webserver_user.uid is regex('^1'))
+
+#    - name: create users on storage servers
+#    - name: copy ssh keys to webservers
+#    - name: copy ssh keys to storage servers
+

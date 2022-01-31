@@ -1,0 +1,11 @@
+---
+- name: testing delegation
+  hosts: all
+  tasks:
+
+    - name: write something to file
+      copy:
+        content: "{{inventory_hostname}}"
+        dest: /tmp/delegate.{{inventory_hostname}}
+      delegate_to: 127.0.0.1
+

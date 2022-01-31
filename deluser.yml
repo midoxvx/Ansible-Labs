@@ -1,0 +1,13 @@
+---
+- name: delete users
+  hosts: localhost
+  vars_files:
+    - vars/users_list.yml
+  tasks:
+
+    - name: delete users
+      user:
+        name: "{{item.username}}"
+        state: absent
+        remove: true
+      loop: "{{users}}"
