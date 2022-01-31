@@ -35,24 +35,63 @@
       file:
         state: directory
         recurse: true
+        path: "{{keys_directory}}"
         owner: "{{ansible_user}}"
         group: "{{ansible_user}}"
       delegate_to: localhost
       run_once: true
 
-    - name: create users on webservers 
-      user:
-        name: "{{webserver_user.username}}"
-        state: present
-        password: "{{user_password | password_hash('sha512', 'rhca')}}"
-        shell: /bin/bash
-        uid: "{{webserver_user.uid}}"
-      loop: "{{users}}"
-      loop_control:
-        loop_var: webserver_user
-      when: ('webservers' in group_names and webserver_user.uid is regex('^1'))
+    - name: user creation block on webservers 
+      block:
+      - name: create users on webservers whose UID starts with one
+        user:
+          name: "{{webserver_user.username}}"
+          state: present
+          password: "{{user_password | password_hash('sha512', 'rhca')}}"
+          shell: /bin/bash
+          uid: "{{webserver_user.uid}}"
+        loop: "{{users}}"
+        loop_control:
+          loop_var: webserver_user
+        when: webserver_user.uid is regex('^1')
 
-#    - name: create users on storage servers
-#    - name: copy ssh keys to webservers
-#    - name: copy ssh keys to storage servers
+      - name: Distribute ssh keys
+        authorized_key:
+          user: "{{webserver_key.username}}"
+          state: present
+          key: "{{lookup('file', '{{keys_directory}}/{{webserver_key.username}}_rsa.pub')}}"
+        loop: "{{users}}"
+        loop_control:
+          loop_var: webserver_key
+        when: webserver_key.uid is regex('^1')
+
+      when: ('webservers' in group_names)
+
+
+ - name: user creation block on storage servers whose UID begins with two
+      block:
+      - name: create users on webservers
+        user:
+          name: "{{storage_user.username}}"
+          state: present
+          password: "{{user_password | password_hash('sha512', 'rhca')}}"
+          shell: /bin/bash
+          uid: "{{storage_user.uid}}"
+        loop: "{{users}}"
+        loop_control:
+          loop_var: storage_user
+        when: storage_user.uid is regex('^2')
+
+      - name: Distribute ssh keys
+        authorized_key:
+          user: "{{storage_key.username}}"
+          state: present
+          key: "{{lookup('file', '{{keys_directory}}/{{storage_key.username}}_rsa.pub')}}"
+        loop: "{{users}}"
+        loop_control:
+          loop_var: storage_key
+        when: storage_key.uid is regex('^2')
+
+      when: ('storage' in group_names)
+
 
