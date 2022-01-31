@@ -68,7 +68,7 @@
       when: ('webservers' in group_names)
 
 
- - name: user creation block on storage servers whose UID begins with two
+    - name: user creation block on storage servers whose UID begins with two
       block:
       - name: create users on webservers
         user:
@@ -93,5 +93,9 @@
         when: storage_key.uid is regex('^2')
 
       when: ('storage' in group_names)
+      notify: local_cleanup
 
+  handlers:
+    - name: local_cleanup
+      include_tasks: deluser.yml
 
