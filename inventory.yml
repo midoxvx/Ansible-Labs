@@ -1,0 +1,12 @@
+all:
+  hosts:
+  children:
+    webservers:
+      hosts:
+        cloud-web-[1:2]
+    storage:
+      hosts:
+        managed-node-[1:2]
+    balancers:
+      hosts:
+        cloud-balancer

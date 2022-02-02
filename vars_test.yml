@@ -1,0 +1,8 @@
+---
+- name: testing variable precedence
+  hosts: all
+  tasks:
+
+    - name: print
+      debug:
+        msg: "{{var1}}"
