@@ -1,0 +1,31 @@
+---
+interfaces:
+  - name: "mgmt"
+    enable: true
+    dhcp: true
+    ip_address: no
+    description: "management"
+  - name: "1/1/1"
+    enable: true
+    ip_address: 10.1.1.2/24
+    description: "uplink to core-1"
+  - name: "1/1/2"
+    enable: true
+    ip_address: 10.1.2.2/24
+    description: "uplink to core-2"
+  - name: "1/1/3"
+    enable: true
+    ip_address: 10.1.3.1/24
+    description: "peerlink to agg-2"
+  - name: "vlan42"
+    ip_address: 10.42.0.2/24
+    ip_helper: false
+    description: "inband management"
+  - name: "vlan44"
+    ip_address: 10.44.0.3/24
+    ip_helper: true
+    fhrp: true
+    description: "wifi aps"
+  - name: 'vlan66'
+    ip_helper: false
+    description: "testing mohie"

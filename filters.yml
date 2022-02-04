@@ -1,0 +1,20 @@
+---
+- name: playing with some filters
+  hosts: localhost
+  vars_files:
+    - vars/users_list.yml
+    - vars/interfaces.yml
+  tasks:
+
+
+    - name: select a specific attribute from a list
+      debug:
+        msg: "{{users | map(attribute='username')}}"
+      tags:
+        - map
+
+    - name: select an attribute with default value set
+      debug:
+        msg: "{{ interfaces | selectattr('ip_address', 'defined') | map(attribute='ip_address', default='n/a')}}"
+      tags:
+        - map
